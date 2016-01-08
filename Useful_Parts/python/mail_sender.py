@@ -8,7 +8,7 @@ from email.mime.audio import MIMEAudio
 from email.mime.multipart import MIMEMultipart
 
 # Naive version
-def sendmail_0(from_addr, to_addr_list, cc_addr_list, subject, message, login, password, picfiles=[], audiofiles = [], otherfiles = [], smtpserver='smtp.163.com'):
+def sendmail_0(from_addr, to_addr_list, cc_addr_list, subject, message, login, password, smtpserver='smtp.163.com'):
 	'Naive version'
 	header  = 'From: %s\n' % from_addr
 	header += 'To: %s\n' % ','.join(to_addr_list)
@@ -23,8 +23,18 @@ def sendmail_0(from_addr, to_addr_list, cc_addr_list, subject, message, login, p
 	server.quit()
 	return problems
 
+"""
+sendmail_0(from_addr = '',
+		to_addr_list = [''],
+		cc_addr_list = [],
+		subject = '',
+		message = '',
+		login = '',
+		password = '')
+"""
+
 # Simple text email, generate header via MIMEText
-def sendmail_1(from_addr, to_addr_list, cc_addr_list, subject, message, login, password, picfiles=[], audiofiles = [], otherfiles = [], smtpserver='smtp.163.com'):
+def sendmail_1(from_addr, to_addr_list, cc_addr_list, subject, message, login, password, smtpserver='smtp.163.com'):
 	'Simple text email, generate header via MIMEText'
 	msg = MIMEText(message)
 	msg['Subject'] = subject
@@ -38,6 +48,16 @@ def sendmail_1(from_addr, to_addr_list, cc_addr_list, subject, message, login, p
 	problems = server.sendmail(from_addr, to_addr_list + cc_addr_list, msg.as_string())
 	server.quit()
 	return problems
+
+"""
+sendmail_1(from_addr = '',
+		to_addr_list = [''],
+		cc_addr_list = [],
+		subject = '',
+		message = '',
+		login = '',
+		password = '')
+"""
 
 # Text mail with files
 def sendmail_2(from_addr, to_addr_list, cc_addr_list, subject, message, login, password, picfiles=[], audiofiles = [], otherfiles = [], smtpserver='smtp.163.com'):
@@ -90,7 +110,7 @@ def sendmail_2(from_addr, to_addr_list, cc_addr_list, subject, message, login, p
 	server.quit()
 	return problems
 
-
+"""
 sendmail_2(from_addr = '',
 		to_addr_list = [''],
 		cc_addr_list = [],
@@ -101,3 +121,51 @@ sendmail_2(from_addr = '',
 		picfiles = [],
 		audiofiles = [],
 		otherfiles = [])
+"""
+
+# Text mail with all kinds of files
+def sendmail_3(from_addr, to_addr_list, cc_addr_list, subject, message, login, password, file_list=[], smtpserver='smtp.163.com'):
+	'Text mail with all kinds of files'
+	msg = MIMEMultipart()
+	msg['Subject'] = subject
+	msg['From'] = from_addr
+	msg['To'] = ','.join(to_addr_list)
+	msg['Cc'] = ','.join(cc_addr_list)
+
+	text = MIMEText(message)
+	msg.attach(text)
+	for file in file_list:
+		fp = open(file, 'rb')
+		mimetype, mimeencoding = mimetypes.guess_type(file)
+		if mimeencoding or (mimetype is None):
+			mimetype = "application/octet-stream"
+		maintype, subtype = mimetype.split('/')
+		if maintype == "text":
+			content = MIMEText(fp.read(), _subtype = subtype)
+		elif maintype == "image":
+			content = MIMEImage(fp.read(), _subtype = subtype)
+		elif maintype == "audio":
+			content = MIMEAudio(fp.read(), _subtype = subtype)
+		else:
+			content = MIMEBase(maintype, subtype)
+			content.set_payload(fp.read())
+			encoders.encode_base64(content)
+		fp.close()
+		msg.add_header("Content-Disposition","attachment",filename = file.split('\\')[-1])
+		msg.attach(content)
+
+	server = smtplib.SMTP(smtpserver)
+	server.starttls()
+	server.login(login, password)
+	problems = server.sendmail(from_addr, to_addr_list + cc_addr_list, msg.as_string())
+	server.quit()
+	return problems
+
+sendmail_3(from_addr = '',
+		to_addr_list = [''],
+		cc_addr_list = [],
+		subject = '',
+		message = '',
+		login = '',
+		password = '',
+		file_list = [])
